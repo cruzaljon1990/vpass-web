@@ -11,7 +11,7 @@ const is_in = require('../helpers/vehicle/is_in');
 router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
   let condition = {};
   let vehicles = await Vehicle.paginate(condition, {
-    page: 1,
+    page: parseInt(req.query.page) || 1,
     populate: [
       {
         path: 'logs',
@@ -125,10 +125,15 @@ router.post(
   '/toggle-status/:id',
   [auth(['admin', 'guard']), validate('vehicle_id')],
   async (req, res) => {
-    const vehicle = await Vehicle.findById(req.params.id).populate({
-      path: 'logs',
-      model: Log,
-    });
+    const vehicle = await Vehicle.findById(req.params.id)
+      .populate({
+        path: 'logs',
+        model: Log,
+      })
+      .populate({
+        path: 'owner',
+        model: User,
+      });
 
     let { log_id } = req.body;
 
@@ -158,6 +163,9 @@ router.post(
       let log = await Log.create({
         model: vehicle.model,
         plate_no: vehicle.plate_no,
+        firstname: vehicle.owner.firstname,
+        middlename: vehicle.owner.middlename,
+        lastname: vehicle.owner.lastname,
         vehicle_ref: req.params.id,
       });
       vehicle.logs.push(log);

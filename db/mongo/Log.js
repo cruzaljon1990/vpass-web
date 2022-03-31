@@ -6,6 +6,13 @@ const schema = mongoose.Schema(
     id: String,
     model: String,
     plate_no: String,
+    firstname: String,
+    middlename: String,
+    lastname: String,
+    is_visitor: {
+      type: Boolean,
+      default: false,
+    },
     time_in: {
       type: Date,
       default: Date.now,
