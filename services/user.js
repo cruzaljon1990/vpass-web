@@ -41,7 +41,7 @@ router.post('/login', [validate('user_login')], async (req, res) => {
         });
       }
     } else {
-      return res.status(403).send({ data: 'Invalid credentials!' });
+      return res.status(404).send({ data: 'Invalid credentials!' });
     }
   } catch (error) {
     return res.status(500).send({ error });
@@ -71,6 +71,8 @@ router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
         populate: {
           path: 'logs',
           model: Log,
+          perDocumentLimit: 5,
+          options: { sort: '-created_at' },
         },
       },
     });
@@ -95,6 +97,8 @@ router.get('/me', [auth(['all'])], async (req, res) => {
         populate: {
           path: 'logs',
           model: Log,
+          perDocumentLimit: 5,
+          options: { sort: '-created_at' },
         },
       })
       .select('-password');
@@ -122,6 +126,8 @@ router.get(
           populate: {
             path: 'logs',
             model: Log,
+            perDocumentLimit: 5,
+            options: { sort: '-created_at' },
           },
         })
         .select('-password');
@@ -170,7 +176,7 @@ router.post('/', [validate('user_create')], async (req, res) => {
 
 router.post(
   '/:id?',
-  [auth(['admin', 'driver']), validate('user_update')],
+  [auth(['admin', 'guard', 'driver']), validate('user_update')],
   async (req, res) => {
     let { password, type, firstname, middlename, lastname, birthday, status } =
       req.body;
@@ -188,9 +194,27 @@ router.post(
         birthday,
         status,
       },
-      { new: true }
+      {
+        new: true,
+        populate: {
+          path: 'vehicles',
+          model: Vehicle,
+          populate: {
+            path: 'logs',
+            model: Log,
+            perDocumentLimit: 5,
+            options: { sort: '-created_at' },
+          },
+        },
+      }
     );
-    return res.send(user);
+    if (user) {
+      user.age = moment().diff(user.birthday, 'years');
+      has_vehicles_inside(user);
+      return res.send(user);
+    } else {
+      return res.status(500).send({ error: 'Invalid user' });
+    }
   }
 );
 

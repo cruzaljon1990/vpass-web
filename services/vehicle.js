@@ -16,6 +16,8 @@ router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
       {
         path: 'logs',
         model: Log,
+        perDocumentLimit: 5,
+        options: { sort: '-created_at' },
       },
       {
         path: 'owner',
@@ -35,9 +37,13 @@ router.get(
   [auth(['all']), validate('vehicle_id')],
   async (req, res) => {
     try {
-      console.log(req.params.id);
       let vehicle = await Vehicle.findById(req.params.id)
-        .populate({ path: 'logs', model: Log })
+        .populate({
+          path: 'logs',
+          model: Log,
+          perDocumentLimit: 5,
+          options: { sort: '-created_at' },
+        })
         .populate({
           path: 'owner',
           model: User,
@@ -125,7 +131,7 @@ router.post(
   '/toggle-status/:id',
   [auth(['admin', 'guard']), validate('vehicle_id')],
   async (req, res) => {
-    const vehicle = await Vehicle.findById(req.params.id)
+    let vehicle = await Vehicle.findById(req.params.id)
       .populate({
         path: 'logs',
         model: Log,
@@ -135,46 +141,59 @@ router.post(
         model: User,
       });
 
-    let { log_id } = req.body;
+    if (vehicle) {
+      let { log_id } = req.body;
 
-    let is_entering = true;
-    if (vehicle.logs) {
-      let result_ok = true;
-      vehicle.logs.forEach(async (log) => {
-        if (!log['time_out']) {
-          log_id = log_id || log._id;
-          is_entering = false;
-          log = await Log.findByIdAndUpdate(
-            log._id,
-            { time_out: Date.now() },
-            { new: true }
-          );
-        } else {
-          log['time_out'] = Date.now();
+      let is_entering = true;
+      if (vehicle.logs) {
+        let result_ok = true;
+        vehicle.logs.forEach(async (log) => {
+          if (!log['time_out']) {
+            log_id = log_id || log._id;
+            is_entering = false;
+            log = await Log.findByIdAndUpdate(
+              log._id,
+              { time_out: Date.now() },
+              { new: true }
+            );
+          } else {
+            log['time_out'] = Date.now();
+          }
+        });
+
+        if (!result_ok && !is_entering) {
+          return res.status(500).send({ error: 'Invalid log!' });
         }
-      });
-
-      if (!result_ok && !is_entering) {
-        return res.status(500).send({ error: 'Invalid log!' });
       }
-    }
 
-    if (is_entering) {
-      let log = await Log.create({
-        model: vehicle.model,
-        plate_no: vehicle.plate_no,
-        firstname: vehicle.owner.firstname,
-        middlename: vehicle.owner.middlename,
-        lastname: vehicle.owner.lastname,
-        vehicle_ref: req.params.id,
+      if (is_entering) {
+        let log = await Log.create({
+          model: vehicle.model,
+          plate_no: vehicle.plate_no,
+          firstname: vehicle.owner.firstname,
+          middlename: vehicle.owner.middlename,
+          lastname: vehicle.owner.lastname,
+          vehicle_ref: req.params.id,
+        });
+        vehicle.logs.push(log);
+        await vehicle.save();
+      }
+      vehicle = await Vehicle.findById(req.params.id)
+        .populate({
+          path: 'logs',
+          model: Log,
+        })
+        .populate({
+          path: 'owner',
+          model: User,
+        });
+      vehicle.is_in = is_in(vehicle);
+      return res.send(vehicle);
+    } else {
+      return res.status(500).send({
+        error: 'Invalid vehicle',
       });
-      vehicle.logs.push(log);
-      await vehicle.save();
     }
-
-    vehicle.is_in = is_in(vehicle);
-
-    res.send(vehicle);
   }
 );
 

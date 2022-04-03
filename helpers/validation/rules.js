@@ -39,6 +39,9 @@ module.exports = {
   vehicle_id: {
     id: 'required',
   },
+  log_id: {
+    id: 'required',
+  },
   server_logs_add: {
     log: 'required',
   },
