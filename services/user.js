@@ -59,6 +59,15 @@ router.get('/logout', [auth(['all'])], async (req, res) => {
 
 router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
   let condition = {};
+  if (req.query.name) {
+    condition = {
+      $or: [
+        { firstname: { $regex: '.*' + req.query.name + '.*' } },
+        { middlename: { $regex: '.*' + req.query.name + '.*' } },
+        { lastname: { $regex: '.*' + req.query.name + '.*' } },
+      ],
+    };
+  }
   if (req.query.type) {
     condition['type'] = req.query.type;
   }

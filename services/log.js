@@ -1,18 +1,38 @@
 const router = require('express').Router();
 const Log = require('../db/mongo/Log');
+const SitePrefs = require('../db/mongo/SitePrefs');
+const User = require('../db/mongo/User');
 const Vehicle = require('../db/mongo/Vehicle');
+const check_for_available_slots = require('../helpers/logs/check_for_available_slots');
 const auth = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
+const { Query } = require('mongoose');
+
+// Check
+router.get('/test/:id', async (req, res) => {
+  return res.send(await check_for_available_slots(false));
+});
 
 router.post('/', [auth(['admin', 'guard'])], async (req, res) => {
   try {
-    let { firstname, middlename, lastname, model, plate_no } = req.body;
+    let { firstname, middlename, lastname, model, plate_no, is_parking } =
+      req.body;
+    if (is_parking === true) {
+      const has_available_slots = await check_for_available_slots(false);
+
+      if (!has_available_slots) {
+        return res.status(501).send({
+          error: 'Limit exceeded!',
+        });
+      }
+    }
     const log = await Log.create({
       firstname,
       middlename,
       lastname,
       model,
       plate_no,
+      is_parking,
       is_visitor: true,
     });
 
@@ -30,9 +50,19 @@ router.post('/', [auth(['admin', 'guard'])], async (req, res) => {
 router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
   let condition = {};
 
+  if (req.query.name) {
+    condition = {
+      $or: [
+        { firstname: { $regex: '.*' + req.query.name + '.*' } },
+        { middlename: { $regex: '.*' + req.query.name + '.*' } },
+        { lastname: { $regex: '.*' + req.query.name + '.*' } },
+      ],
+    };
+  }
   if (req.query.is_visitor) {
     condition['is_visitor'] = req.query.is_visitor == 1;
   }
+
   let logs = await Log.paginate(condition, {
     page: parseInt(req.query.page) || 1,
     sort: '-created_at',
@@ -45,7 +75,6 @@ router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
 
 router.get('/:id', [auth(['admin', 'guard'])], async (req, res) => {
   try {
-    console.log(req.params.id);
     let log = await Log.findById(req.params.id);
     if (log) {
       log.is_in = !log.time_out;

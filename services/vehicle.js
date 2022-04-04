@@ -7,6 +7,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Log = require('../db/mongo/Log');
 const is_in = require('../helpers/vehicle/is_in');
+const SitePrefs = require('../db/mongo/SitePrefs');
+const check_for_available_slots = require('../helpers/logs/check_for_available_slots');
 
 router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
   let condition = {};
@@ -167,6 +169,16 @@ router.post(
       }
 
       if (is_entering) {
+        const has_available_slots = await check_for_available_slots(
+          vehicle.owner.is_vip
+        );
+
+        if (!has_available_slots) {
+          return res.status(501).send({
+            error: 'Limit exceeded!',
+          });
+        }
+
         let log = await Log.create({
           model: vehicle.model,
           plate_no: vehicle.plate_no,
@@ -174,6 +186,7 @@ router.post(
           middlename: vehicle.owner.middlename,
           lastname: vehicle.owner.lastname,
           vehicle_ref: req.params.id,
+          is_vip: vehicle.owner.is_vip == true,
         });
         vehicle.logs.push(log);
         await vehicle.save();

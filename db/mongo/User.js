@@ -21,6 +21,10 @@ const schema = mongoose.Schema(
     birthday: Date,
     status: Number,
     age: Number,
+    is_vip: {
+      type: Boolean,
+      default: false,
+    },
     has_vehicles_inside: Boolean,
     vehicles: [
       {

@@ -9,6 +9,14 @@ const schema = mongoose.Schema(
     firstname: String,
     middlename: String,
     lastname: String,
+    is_vip: {
+      type: Boolean,
+      default: false,
+    },
+    is_parking: {
+      type: Boolean,
+      default: true,
+    },
     is_visitor: {
       type: Boolean,
       default: false,
