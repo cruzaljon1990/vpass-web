@@ -21,6 +21,10 @@ const schema = mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    updated_at: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     collection: 'vehicle',

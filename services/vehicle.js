@@ -13,13 +13,14 @@ const check_for_available_slots = require('../helpers/logs/check_for_available_s
 router.get('/', [auth(['admin', 'guard'])], async (req, res) => {
   let condition = {};
   let vehicles = await Vehicle.paginate(condition, {
+    sort: '-updated_at',
     page: parseInt(req.query.page) || 1,
     populate: [
       {
         path: 'logs',
         model: Log,
         perDocumentLimit: 5,
-        options: { sort: '-created_at' },
+        options: { sort: '-updated_at' },
       },
       {
         path: 'owner',
@@ -44,7 +45,7 @@ router.get(
           path: 'logs',
           model: Log,
           perDocumentLimit: 5,
-          options: { sort: '-created_at' },
+          options: { sort: '-updated_at' },
         })
         .populate({
           path: 'owner',

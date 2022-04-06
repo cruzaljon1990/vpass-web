@@ -24,5 +24,7 @@
     "strtotime": "^1.0.0",
     "validatorjs": "^3.22.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@faker-js/faker": "^6.1.2"
+  }
 }

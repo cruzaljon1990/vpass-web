@@ -34,6 +34,10 @@ const schema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vehicle',
     },
+    updated_at: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     collection: 'log',
