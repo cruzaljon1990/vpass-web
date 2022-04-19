@@ -187,6 +187,7 @@ router.post(
           middlename: vehicle.owner.middlename,
           lastname: vehicle.owner.lastname,
           vehicle_ref: req.params.id,
+          reason: 'Work',
           is_vip: vehicle.owner.is_vip == true,
         });
         vehicle.logs.push(log);

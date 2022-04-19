@@ -10,8 +10,15 @@ const validate = require('../middlewares/validate');
 
 router.post('/', [auth(['admin', 'guard'])], async (req, res) => {
   try {
-    let { firstname, middlename, lastname, model, plate_no, is_parking } =
-      req.body;
+    let {
+      firstname,
+      middlename,
+      lastname,
+      model,
+      plate_no,
+      is_parking,
+      reason,
+    } = req.body;
     if (is_parking === true) {
       const has_available_slots = await check_for_available_slots(false);
 
@@ -28,6 +35,7 @@ router.post('/', [auth(['admin', 'guard'])], async (req, res) => {
       model,
       plate_no,
       is_parking,
+      reason,
       is_visitor: true,
     });
 
@@ -43,13 +51,14 @@ router.post('/', [auth(['admin', 'guard'])], async (req, res) => {
 });
 
 router.post('/:id', [auth(['admin', 'guard'])], async (req, res) => {
-  const { firstname, middlename, lastname, model, plate_no } = req.body;
+  const { firstname, middlename, lastname, model, plate_no, reason } = req.body;
   const log = await Log.findByIdAndUpdate(req.params.id, {
     firstname,
     middlename,
     lastname,
     model,
     plate_no,
+    reason,
     updated_at: Date.now(),
   });
 

@@ -9,6 +9,7 @@ const schema = mongoose.Schema(
     firstname: String,
     middlename: String,
     lastname: String,
+    reason: String,
     is_vip: {
       type: Boolean,
       default: false,
